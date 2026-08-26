@@ -7,22 +7,27 @@ import (
     "syscall"
     "fmt"
     "os"
-    "TrendDet/internal/config"
-    "TrendDet/internal/telegram"
+    "github.com/egor-shik/TgTrendDetect/internal/config"
+    "github.com/egor-shik/TgTrendDetect/internal/telegram"
 )
 
 func main() {
     ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-    defer stop
-    cfg := &config.Config{
-    AppID:  
-    AppHash:  
-    Phone: 
-    SessionFilePath:  
-    }
+    defer stop()
+    cfg := config.NewConfig(
+    PUPUPU,
+    "PUPUPU",
+    "PUPUPU",
+    "PUPUPU", 
+    )
     client, err := telegram.NewClient(cfg)
     if err != nil {
         log.Fatalf("Client creation error: %v", err)
+    }
+    fmt.Println("Starting application... Press ctrl+C to exit")
+
+    if err := client.Start(ctx); err != nil && err != context.Canceled {
+        log.Fatalf("Client exwecution error: %v", err)
     }
     fmt.Println("The app has shut down")
 }
