@@ -7,6 +7,11 @@ type Config struct {
     SessionFilePath string 
 }
 
-func NewConfig() *Config {
-    return &Config{...}
+func NewConfig(appID int, appHash, phone, sessionFilePath string) *Config {
+    return &Config{
+    AppID:  appID,
+    AppHash:  appHash,
+    Phone: phone,
+    SessionFilePath: sessionFilePath,
+    }
 }
