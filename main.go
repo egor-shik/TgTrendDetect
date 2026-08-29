@@ -15,12 +15,13 @@ func main() {
     ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
     defer stop()
     cfg := config.NewConfig(
-        pup,
-        "pip",
-        "pup",
+        pipu,
+        "pipu",
+        "pipu",
         "session.json", 
         )
-    client, err := telegram.NewClient(cfg)
+    handler := telegram.NewUpdateHandler()
+    client, err := telegram.NewClient(cfg, handler)
     if err != nil {
         log.Fatalf("Client creation error: %v", err)
     }
