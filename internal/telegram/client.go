@@ -4,6 +4,7 @@ import (
  "context"
  "fmt"
  "strings"
+ "time" 
 
  "github.com/egor-shik/TgTrendDetect/internal/config"
 
@@ -37,7 +38,7 @@ func NewClient(cfg *config.Config, gaps *updates.Manager) (*Client, error) {
 
 func (c *Client) Start(ctx context.Context) error {
  flow := auth.NewFlow(
-  auth.Constant(c.cfg.Phone, "pipu", auth.CodeAuthenticatorFunc(promtCode)),
+  auth.Constant(c.cfg.Phone, "", auth.CodeAuthenticatorFunc(promtCode)),
   auth.SendCodeOptions{},
  )
 
@@ -55,16 +56,42 @@ func (c *Client) Start(ctx context.Context) error {
   fmt.Println("Warming up channel dialogs...")
 
   api := c.tgClient.API()
-  if _, err := api.MessagesGetDialogs(ctx, &tg.MessagesGetDialogsRequest{
-   Limit: 100,
-  }); err != nil {
+
+  var chats []tg.ChatClass 
+
+  dialogs, err := api.MessagesGetDialogs(ctx, &tg.MessagesGetDialogsRequest{
+   OffsetPeer: &tg.InputPeerEmpty{},
+   Limit:      100,
+  })
+  if err != nil {
    fmt.Printf("Warning: failed to fetch dialogs: %v\n", err)
+  } else {
+   switch d := dialogs.(type) {
+   case *tg.MessagesDialogs:
+    chats = d.Chats
+   case *tg.MessagesDialogsSlice:
+    chats = d.Chats
+   }
+   fmt.Printf("SUCCESS! Loaded %d dialogs/channels into cache!\n", len(chats))
   }
 
-  fmt.Println("Starting Gaps synchronization... Listening for posts from ALL channels!")
+  var targetChannels []*tg.Channel
+  for _, chat := range chats {
+   if ch, ok := chat.(*tg.Channel); ok {
+    targetChannels = append(targetChannels, ch)
+   }
+  }
+  fmt.Printf("SUCCESS! Target channels for polling: %d\n", len(targetChannels))
 
-  return c.gaps.Run(ctx, api, self.ID, updates.AuthOptions{})
-}
+  poller := NewChannelPoller(c)
+  go poller.StartPolling(ctx, targetChannels, 10*time.Second)
+
+  fmt.Println("Starting Gaps synchronization... Listening for posts!")
+
+  return c.gaps.Run(ctx, api, self.ID, updates.AuthOptions{
+   IsBot: false,
+  })
+ })
 }
 
 func promtCode(ctx context.Context, sentCode *tg.AuthSentCode) (string, error) {
@@ -72,4 +99,11 @@ func promtCode(ctx context.Context, sentCode *tg.AuthSentCode) (string, error) {
  var code string
  _, err := fmt.Scan(&code)
  return strings.TrimSpace(code), err
+}
+
+func promptPassword(ctx context.Context) (string, error) {
+ fmt.Print("Enter your 2FA Cloud Password: ")
+ var password string
+ _, err := fmt.Scan(&password)
+ return strings.TrimSpace(password), err
 }
