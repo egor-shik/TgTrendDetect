@@ -37,8 +37,11 @@ func NewClient(cfg *config.Config, gaps *updates.Manager) (*Client, error) {
 }
 
 func (c *Client) Start(ctx context.Context) error {
+    fmt.Print("Enter 2FA password: ")
+    var pwd string
+    fmt.Scan(&pwd)
  flow := auth.NewFlow(
-  auth.Constant(c.cfg.Phone, "", auth.CodeAuthenticatorFunc(promtCode)),
+  auth.Constant(c.cfg.Phone, pwd, auth.CodeAuthenticatorFunc(promtCode)),
   auth.SendCodeOptions{},
  )
 

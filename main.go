@@ -15,11 +15,12 @@ func main() {
     ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
     defer stop()
     cfg := config.NewConfig(
-        pipo,
-        "pipo",
-        "pipo",
+        ,
+        "",
+        "",
         "session.json", 
         )
+        
     handler := telegram.NewUpdateHandler()
     client, err := telegram.NewClient(cfg, handler)
     if err != nil {
